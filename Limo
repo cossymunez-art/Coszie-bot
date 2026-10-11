@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lumo × Deriv Digit Bot</title>
+<style>
+:root{--bg:#08111f;--panel:#101d30;--panel2:#0c1727;--line:#263750;--text:#eaf2ff;--muted:#91a4c0;--green:#3ce0a1;--red:#ff647c;--blue:#78aaff;--amber:#ffc66d}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0%,#15294a 0,transparent 36%),var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:1100px;margin:auto;padding:20px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}.brand{display:flex;gap:12px;align-items:center}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#78aaff,#6d5cff);display:grid;place-items:center;font-weight:900;color:#061020;font-size:18px}.eyebrow{color:var(--green);font-size:11px;letter-spacing:.16em;font-weight:800}.title{font-size:25px;font-weight:850;letter-spacing:-.04em}.sub{color:var(--muted);font-size:13px}.pill{border:1px solid var(--line);padding:7px 11px;border-radius:999px;color:var(--muted);font-size:12px}
+.notice{background:#241e13;border:1px solid #574526;color:#f8d9a0;padding:12px 14px;border-radius:12px;margin:0 0 16px;font-size:13px}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:17px;padding:17px;min-width:0}.panel h2{font-size:15px;margin:0 0 14px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:16px}.stat{padding:12px;background:#0a1525;border:1px solid var(--line);border-radius:12px}.stat small{display:block;color:var(--muted);font-size:11px}.stat strong{display:block;font-size:20px;margin-top:4px}.green{color:var(--green)}.red{color:var(--red)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}.field input,.field select{width:100%;background:#07111f;color:var(--text);border:1px solid #30435e;border-radius:9px;padding:11px;outline:none}.field input:focus,.field select:focus{border-color:var(--blue)}.checkrow{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin:13px 0}.buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:10px;padding:11px 15px;font-weight:800;cursor:pointer}.primary{background:var(--green);color:#04170f}.secondary{background:#20314b;color:var(--text);border:1px solid #344b6a}.danger{background:#421d2b;color:#ffb6c2;border:1px solid #713348}.btn:disabled{opacity:.45;cursor:not-allowed}.statusline{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;margin:12px 0}.dot{width:8px;height:8px;border-radius:50%;background:#65758d}.dot.on{background:var(--green);box-shadow:0 0 12px #3ce0a177}.lastdigits{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0 15px}.digit{width:35px;height:35px;display:grid;place-items:center;background:#0a1525;border:1px solid var(--line);border-radius:9px;font-weight:800}.digit.latest{border-color:var(--green);color:var(--green)}.log{height:220px;overflow:auto;background:#060e19;border:1px solid var(--line);border-radius:10px;padding:10px;font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;color:#b7c7df}.log p{margin:0 0 5px}.log .good{color:var(--green)}.log .bad{color:var(--red)}.log .warn{color:var(--amber)}.small{font-size:12px;color:var(--muted)}.strategy{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.tag{padding:9px 8px;border:1px solid var(--line);border-radius:10px;background:#0a1525;text-align:center;font-size:12px}.tag b{display:block;font-size:13px;margin-bottom:3px}.foot{margin-top:15px;color:var(--muted);font-size:12px}
+@media(max-width:760px){main{padding:13px}.grid{grid-template-columns:1fr}.title{font-size:21px}.stats{grid-template-columns:repeat(2,1fr)}.stat strong{font-size:17px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="brand"><div class="logo">L</div><div><div class="eyebrow">LUMO STRATEGY ENGINE</div><div class="title">Deriv Digit Bot</div><div class="sub">Automatic digit-contract execution · WebSocket API</div></div></div><div class="pill" id="modePill">DEMO FIRST · NOT CONNECTED</div></header>
+<div class="notice"><b>Risk warning:</b> Digit contracts are highly speculative and can lose the full stake. This bot does not guarantee profit. The "Lumo" signal is a cosmetic heuristic with no predictive edge. Start on a Deriv demo account, use a small stake, and never enable live trading unless you understand the risks. Keep your API token private.</div>
+<div class="stats">
+ <div class="stat"><small>Connection</small><strong id="connStat">Offline</strong></div>
+ <div class="stat"><small>Last digit</small><strong id="digitStat">—</strong></div>
+ <div class="stat"><small>Balance</small><strong id="balStat">—</strong></div>
+ <div class="stat"><small>Session P/L</small><strong id="pnlStat">$0.00</strong></div>
+</div>
+<div class="grid">
+<section class="panel">
+<h2>01 / Connection &amp; risk controls</h2>
+<div class="formgrid">
+ <div class="field"><label>Account mode</label><select id="accountMode"><option value="demo">Demo account (recommended)</option><option value="live">Live account (real money)</option></select></div>
+ <div class="field"><label>App ID</label><input id="appId" value="1089" inputmode="numeric" placeholder="Deriv app ID"></div>
+ <div class="field" style="grid-column:1/-1"><label>Deriv API token (trade permission needed)</label><input id="token" type="password" autocomplete="off" placeholder="Paste token here; never share it"></div>
+ <div class="field"><label>Market / symbol</label><select id="symbol"><option value="R_100">Volatility 100 Index</option><option value="R_75">Volatility 75 Index</option><option value="R_50">Volatility 50 Index</option><option value="R_25">Volatility 25 Index</option><option value="R_10">Volatility 10 Index</option><option value="1HZ100V">Volatility 100 (1s) Index</option><option value="1HZ75V">Volatility 75 (1s) Index</option><option value="1HZ50V">Volatility 50 (1s) Index</option><option value="1HZ25V">Volatility 25 (1s) Index</option><option value="1HZ10V">Volatility 10 (1s) Index</option></select></div>
+ <div class="field"><label>Contract type</label><select id="contract"><option value="DIGITMATCH">Match</option><option value="DIGITDIFF">Differ</option><option value="DIGITOVER">Over</option><option value="DIGITUNDER">Under</option><option value="DIGITODD">Odd</option><option value="DIGITEVEN">Even</option></select></div>
+ <div class="field"><label>Stake per trade</label><input id="stake" type="number" min="0.35" step="0.01" value="0.35"></div>
+ <div class="field"><label>Currency</label><select id="currency"><option>USD</option><option>EUR</option><option>GBP</option><option>AUD</option></select></div>
+ <div class="field"><label>Match / differ / over / under barrier (0–9)</label><input id="barrier" type="number" min="0" max="9" value="5"></div>
+ <div class="field"><label>Trade cooldown (ticks)</label><input id="cooldown" type="number" min="1" max="100" value="5"></div>
+ <div class="field"><label>Stop loss for session</label><input id="stopLoss" type="number" min="0.01" step="0.01" value="5"></div>
+ <div class="field"><label>Take-profit for session</label><input id="takeProfit" type="number" min="0.01" step="0.01" value="3"></div>
+ <div class="field"><label>Max consecutive losses</label><input id="maxLosses" type="number" min="0" max="50" value="3"></div>
+</div>
+<label class="checkrow"><input id="autoTrade" type="checkbox"> Enable automatic orders after connection (demo strongly recommended)</label>
+<label class="checkrow"><input id="confirmLive" type="checkbox"> I understand live mode uses real money</label>
+<div class="buttons"><button class="btn primary" id="connectBtn">Connect &amp; authorize</button><button class="btn secondary" id="startBtn" disabled>Start bot</button><button class="btn danger" id="stopBtn" disabled>Stop bot</button><button class="btn secondary" id="disconnectBtn">Disconnect</button></div>
+<div class="statusline"><span class="dot" id="dot"></span><span id="statusText">Not connected. Use a demo token to test.</span></div>
+<p class="small">Uses 1-tick contracts. One open contract at a time. Session limits stop new orders, but cannot reverse a contract already bought.</p>
+</section>
+<section class="panel">
+<h2>02 / Lumo signal monitor</h2>
+<div class="small">Recent last digits (newest first)</div><div class="lastdigits" id="digits"></div>
+<div class="strategy">
+<div class="tag"><b id="oddEven">—</b><span>Odd / even</span></div>
+<div class="tag"><b id="highLow">—</b><span>Low / high</span></div>
+<div class="tag"><b id="confidence">0%</b><span>Rule score</span></div>
+</div>
+<p class="small" style="margin:13px 0">The local "Lumo" engine is a transparent heuristic, not a connected Lumo AI service. It summarizes recent digits and uses cooldown/risk stops; it cannot predict random outcomes reliably.</p>
+<h2 style="margin-top:19px">03 / Activity log</h2><div class="log" id="log" aria-live="polite"><p>Waiting for connection…</p></div>
+</section>
+</div>
+<div class="foot">This is an educational starter bot, not financial advice. It does not martingale or increase stake after losses. Deriv API terms, account permissions, contract availability, and local laws apply.</div>
+</main>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+let ws=null, reqId=1, authorized=false, running=false, ticks=0, lastTradeTick=-9999,
+    openContract=false, pnl=0, digits=[], accountCurrency='USD', balance=null,
+    consecutiveLosses=0, activeSubscriptions=new Set();
+const pending=new Map();
+
+function log(msg,cls=''){
+  const p=document.createElement('p'); if(cls)p.className=cls;
+  p.textContent=`[${new Date().toLocaleTimeString()}] ${msg}`;
+  $('log').prepend(p);
+  while($('log').children.length>100)$('log').lastChild.remove();
+}
+function status(s,on=false){
+  $('statusText').textContent=s;
+  $('dot').classList.toggle('on',on);
+  $('connStat').textContent=on?'Online':'Offline';
+}
+function fmtMoney(v){
+  if(v==null||!Number.isFinite(v))return '—';
+  return (v>=0?'+':'-')+'$'+Math.abs(v).toFixed(2);
+}
+function setBalance(v){
+  balance=v;
+  $('balStat').textContent = (v==null?'—':'$'+Number(v).toFixed(2));
+}
+function setPnl(v){
+  pnl=v;
+  $('pnlStat').textContent=fmtMoney(v);
+  $('pnlStat').className = v>=0?'green':'red';
+}
+function request(obj){
+  return new Promise((resolve,reject)=>{
+    if(!ws||ws.readyState!==WebSocket.OPEN)return reject(Error('Not connected'));
+    const id=reqId++;obj.req_id=id;
+    pending.set(id,{resolve,reject});
+    ws.send(JSON.stringify(obj));
+    setTimeout(()=>{
+      if(pending.has(id)){pending.delete(id);reject(Error('API request timed out'));}
+    },15000);
+  });
+}
+function send(obj){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(obj));}
+function forgetAll(){
+  if(ws&&ws.readyState===WebSocket.OPEN&&activeSubscriptions.size){
+    send({forget_all:[...activeSubscriptions]});
+    activeSubscriptions.clear();
+  }
+}
+function endpoint(){
+  const id=$('appId').value.trim();
+  if(!/^\d+$/.test(id))throw Error('App ID must be numeric');
+  return `wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(id)}`;
+}
+function resetSession(){
+  setPnl(0);consecutiveLosses=0;openContract=false;lastTradeTick=-9999;
+  digits=[];$('digits').replaceChildren();$('digitStat').textContent='—';
+  updateSignals();
+}
+
+async function connect(){
+  if(ws)disconnect();
+  const token=$('token').value.trim();
+  if(!token){alert('Paste your Deriv API token first.');return;}
+  if($('accountMode').value==='live'&&!$('confirmLive').checked){
+    alert('Confirm that you understand live mode uses real money.');return;
+  }
+  try{
+    status('Connecting…');
+    ws=new WebSocket(endpoint());
+
+    ws.onopen=async()=>{
+      log('WebSocket connected. Authorizing…');
+      try{
+        const a=await request({authorize:token});
+        authorized=true;
+        accountCurrency=a.authorize.currency||$('currency').value;
+        setBalance(Number(a.authorize.balance));
+        // Force currency select to the real account currency to avoid proposal mismatches
+        if([...$('currency').options].some(o=>o.value===accountCurrency)){
+          $('currency').value=accountCurrency;
+        }else{
+          const opt=document.createElement('option');
+          opt.value=accountCurrency;opt.textContent=accountCurrency;
+          $('currency').append(opt);$('currency').value=accountCurrency;
+        }
+        const isVirtual = a.authorize.is_virtual===1;
+        if(!isVirtual&&$('accountMode').value==='demo'){
+          log('Warning: token is for a real account, not demo. Disconnect and choose Live mode.','warn');
+        }
+        if(isVirtual&&$('accountMode').value==='live'){
+          log('Warning: token is for a virtual account. Choose Demo mode.','warn');
+        }
+        $('modePill').textContent=(isVirtual?'DEMO':'LIVE')+' · AUTHORIZED';
+        status('Authorized · '+(a.authorize.loginid||'account'),true);
+        $('startBtn').disabled=false;
+        $('connectBtn').disabled=true;
+        resetSession();
+        log('Authorized. Currency: '+accountCurrency+'. Balance: '+(a.authorize.balance??'unknown'));
+        activeSubscriptions.add('ticks');
+        send({ticks:$('symbol').value,subscribe:1});
+      }catch(e){
+        log('Authorization failed: '+e.message,'bad');
+        status('Authorization failed');
+      }
+    };
+
+    ws.onmessage=e=>{
+      let data;try{data=JSON.parse(e.data)}catch{return}
+      if(data.req_id&&pending.has(data.req_id)){
+        const p=pending.get(data.req_id);pending.delete(data.req_id);
+        if(data.error)p.reject(Error(data.error.message||'API error'));
+        else p.resolve(data);
+        return;
+      }
+      if(data.error){log('API error: '+data.error.message,'bad');return;}
+      if(data.msg_type==='tick'&&data.tick){onTick(data.tick);}
+      else if(data.msg_type==='proposal_open_contract'&&data.proposal_open_contract){
+        onContract(data.proposal_open_contract);
+      }
+      else if(data.msg_type==='buy'&&data.buy){onBuy(data.buy);}
+    };
+
+    ws.onerror=()=>{log('WebSocket connection error. Check network/app ID.','bad');status('Connection error');};
+
+    ws.onclose=()=>{
+      authorized=false;running=false;openContract=false;activeSubscriptions.clear();
+      $('connectBtn').disabled=false;$('startBtn').disabled=true;$('stopBtn').disabled=true;
+      status('Disconnected');$('modePill').textContent='NOT CONNECTED';
+      log('Connection closed.');
+    };
+  }catch(e){log(e.message,'bad');status('Connection failed');}
+}
+
+function onTick(t){
+  ticks++;
+  const quote=String(t.quote);
+  const digit=Number(quote.slice(-1));
+  digits.unshift(digit);
+  digits=digits.slice(0,12);
+  $('digitStat').textContent=digit;
+  renderDigits();updateSignals();
+  const cooldown=Math.max(1,Number($('cooldown').value)||5);
+  if(running&&$('autoTrade').checked&&!openContract&&ticks-lastTradeTick>=cooldown){
+    maybeTrade(digit);
+  }
+}
+function renderDigits(){
+  $('digits').replaceChildren();
+  digits.forEach((d,i)=>{
+    const el=document.createElement('span');
+    el.className='digit'+(i===0?' latest':'');
+    el.textContent=d;
+    $('digits').append(el);
+  });
+}
+function updateSignals(){
+  if(!digits.length){$('oddEven').textContent='—';$('highLow').textContent='—';$('confidence').textContent='0%';return;}
+  const n=Math.min(digits.length,10);
+  const sample=digits.slice(0,n);
+  const odds=sample.filter(x=>x%2===1).length;
+  const highs=sample.filter(x=>x>=5).length;
+  $('oddEven').textContent=odds>n/2?'Odd leaning':odds<n/2?'Even leaning':'Balanced';
+  $('highLow').textContent=highs>n/2?'High leaning':highs<n/2?'Low leaning':'Balanced';
+  const skew=Math.max(odds,n-odds)/n;
+  const skew2=Math.max(highs,n-highs)/n;
+  $('confidence').textContent=Math.round(Math.max(skew,skew2)*100)+'%';
+}
+
+function maybeTrade(d){
+  const type=$('contract').value;
+  const barrier=Number($('barrier').value);
+  if(['DIGITMATCH','DIGITDIFF','DIGITOVER','DIGITUNDER'].includes(type)){
+    if(!Number.isInteger(barrier)||barrier<0||barrier>9){
+      log('Barrier must be an integer between 0 and 9.','warn');
+      stop('Invalid barrier');
+      return;
+    }
+  }
+  // Lumo heuristic: cosmetic trigger, not a predictive edge.
+  let trigger=false;
+  if(type==='DIGITMATCH')trigger=d===barrier;
+  else if(type==='DIGITDIFF')trigger=d!==barrier;
+  else if(type==='DIGITOVER')trigger=d>barrier;
+  else if(type==='DIGITUNDER')trigger=d<barrier;
+  else if(type==='DIGITODD')trigger=d%2===1;
+  else if(type==='DIGITEVEN')trigger=d%2===0;
+  if(!trigger)return;
+
+  const stake=Number($('stake').value);
+  if(!Number.isFinite(stake)||stake<=0){log('Stake must be positive.','warn');return;}
+
+  const limLoss=Math.abs(Number($('stopLoss').value)||0);
+  const limProfit=Math.abs(Number($('takeProfit').value)||0);
+  const limLosses=Math.max(0,Number($('maxLosses').value)||0);
+
+  if(limLoss>0&&pnl<=-limLoss){stop('Session stop-loss reached');return;}
+  if(limProfit>0&&pnl>=limProfit){stop('Session take-profit reached');return;}
+  if(limLosses>0&&consecutiveLosses>=limLosses){stop('Max consecutive losses reached');return;}
+
+  lastTradeTick=ticks;
+  openContract=true;
+  log(`Signal: ${type} triggered by digit ${d}. Requesting proposal…`,'warn');
+
+  const proposal={
+    proposal:1,amount:stake,basis:'stake',contract_type:type,
+    currency:accountCurrency,duration:1,duration_unit:'t',
+    symbol:$('symbol').value
+  };
+  if(['DIGITMATCH','DIGITDIFF','DIGITOVER','DIGITUNDER'].includes(type)){
+    proposal.barrier=String(barrier);
+  }
+
+  request(proposal).then(r=>{
+    if(!running){openContract=false;return;}
+    buyProposal(r.proposal);
+  }).catch(e=>{
+    openContract=false;
+    log('Proposal failed: '+e.message,'bad');
+  });
+}
+
+async function buyProposal(p){
+  if(!running){openContract=false;return;}
+  try{
+    const res=await request({buy:p.id,price:Number(p.ask_price)});
+    if(res.buy){
+      openContract=true;
+      log('Buy request accepted · contract ID '+res.buy.contract_id,'good');
+      // Note: Deriv sends a 'buy' stream message; onBuy handles the subscription.
+    }
+  }catch(e){
+    openContract=false;
+    log('Buy failed: '+e.message,'bad');
+  }
+}
+
+function onBuy(b){
+  openContract=true;
+  if(!activeSubscriptions.has('proposal_open_contract')){
+    activeSubscriptions.add('proposal_open_contract');
+  }
+  send({proposal_open_contract:1,contract_id:b.contract_id,subscribe:1});
+}
+
+function onContract(c){
+  if(!c.is_sold)return;
+  openContract=false;
+  const profit=Number(c.profit||0);
+  setPnl(pnl+profit);
+  if(profit<0)consecutiveLosses++;else consecutiveLosses=0;
+
+  log(
+    `Contract ${c.contract_id} settled · ${profit>=0?'profit':'loss'} ${profit.toFixed(2)} ${c.currency||accountCurrency}. Session P/L ${pnl.toFixed(2)}.`,
+    profit>=0?'good':'bad'
+  );
+  // Refresh balance via a balance request (Deriv keeps it up to date on the account).
+  request({balance:1}).then(r=>{
+    if(r.balance)setBalance(Number(r.balance.balance));
+  }).catch(()=>{});
+
+  if(!running)return;
+  const limLoss=Math.abs(Number($('stopLoss').value)||0);
+  const limProfit=Math.abs(Number($('takeProfit').value)||0);
+  const limLosses=Math.max(0,Number($('maxLosses').value)||0);
+  if(limLoss>0&&pnl<=-limLoss)stop('Session stop-loss reached');
+  else if(limProfit>0&&pnl>=limProfit)stop('Session take-profit reached');
+  else if(limLosses>0&&consecutiveLosses>=limLosses)stop('Max consecutive losses reached');
+}
+
+function start(){
+  if(!authorized){alert('Connect and authorize first.');return;}
+  if($('accountMode').value==='live'&&!$('confirmLive').checked){
+    alert('Confirm live trading risk first.');return;
+  }
+  running=true;lastTradeTick=ticks;
+  $('startBtn').disabled=true;$('stopBtn').disabled=false;
+  log('Bot started. Automatic orders '+($('autoTrade').checked?'ENABLED':'DISABLED')+'.','good');
+  status('Bot running',true);
+  if(!$('autoTrade').checked)log('Auto orders are disabled: enable the checkbox to place orders.','warn');
+}
+function stop(reason='Bot stopped'){
+  running=false;
+  $('startBtn').disabled=!authorized;
+  $('stopBtn').disabled=true;
+  log(reason+'. No new orders will be placed.','warn');
+  status(authorized?'Connected · bot stopped':'Disconnected',authorized);
+}
+function disconnect(){
+  running=false;authorized=false;openContract=false;
+  forgetAll();
+  if(ws){try{ws.close()}catch{}ws=null;}
+  pending.forEach(p=>p.reject(Error('Disconnected')));
+  pending.clear();
+  $('connectBtn').disabled=false;$('startBtn').disabled=true;$('stopBtn').disabled=true;
+  status('Disconnected');$('modePill').textContent='NOT CONNECTED';
+}
+
+$('connectBtn').addEventListener('click',connect);
+$('startBtn').addEventListener('click',start);
+$('stopBtn').addEventListener('click',()=>stop());
+$('disconnectBtn').addEventListener('click',disconnect);
+$('accountMode').addEventListener('change',()=>{
+  $('modePill').textContent = $('accountMode').value==='demo'
+    ? 'DEMO FIRST · NOT CONNECTED'
+    : 'LIVE MODE SELECTED';
+});
+$('contract').addEventListener('change',()=>{
+  $('barrier').disabled=['DIGITODD','DIGITEVEN'].includes($('contract').value);
+});
+$('contract').dispatchEvent(new Event('change'));
+window.addEventListener('beforeunload',()=>{
+  forgetAll();
+  if(ws){try{ws.close()}catch{}}
+});
+})();
+</script>
+</body>
+</html>
